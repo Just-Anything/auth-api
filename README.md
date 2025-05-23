@@ -2,6 +2,7 @@
 Kill NodeJS app using Terminal with command: pkill node
 Delete NodeJS app
 Copy the following to .htaccess
+```
 # DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN
 PassengerAppRoot "/home/cornerca/auth.cornercabin.net"
 PassengerBaseURI "/"
@@ -21,5 +22,6 @@ RewriteRule ^(.*)$ http://127.0.0.1:3001/$1 [P,L]
 <IfModule Litespeed>
 </IfModule>
 # DO NOT REMOVE OR MODIFY. CLOUDLINUX ENV VARS CONFIGURATION END
+```
 
 Recreate and start NodeJS app
