@@ -15,6 +15,9 @@ dotenv.config()
 const app = express()
 const PORT = process.env.PORT || 3000
 
+// Enable trust proxy
+app.set('trust proxy', 1); // Trust the first proxy
+
 // Create Bunyan logger
 const logger = bunyan.createLogger({
   name: 'auth-api',
@@ -61,19 +64,30 @@ app.use(helmet({
   crossOriginOpenerPolicy: false,
   crossOriginResourcePolicy: false
 }))
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+  : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost'];
+
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGIN || 'http://localhost:3000',
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    // Allow if origin matches any allowed origin (case-insensitive)
+    if (allowedOrigins.some(o => o.toLowerCase() === origin.toLowerCase())) {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS'));
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
-}))
+}));
 
 // Configure rate limiting
 const limiter = rateLimit({
-  windowMs: 1 * 60 * 60 * 1000, // 1 hour
+  windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per hour
   message: "Too many requests from this IP, please try again after 1 hour",
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: true
 })
 
 // Apply rate limiting to all requests
@@ -114,6 +128,7 @@ const hashedUsers = await Promise.all(validUsers.map(async user => {
 app.post("/api/login", async (req, res) => {
   try {
     const { username, password } = req.body
+    logger.info(`Login attempt for user: ${username}`)
 
     // Validate input
     if (!username || !password) {
