@@ -65,14 +65,15 @@ app.use(helmet({
   crossOriginResourcePolicy: false
 }))
 const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+  ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim().replace(/\/$/, ''))
   : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost'];
 
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
-    // Allow if origin matches any allowed origin (case-insensitive)
-    if (allowedOrigins.some(o => o.toLowerCase() === origin.toLowerCase())) {
+    // Normalize origin (remove trailing slash, lowercase)
+    const normalizedOrigin = origin.replace(/\/$/, '').toLowerCase();
+    if (allowedOrigins.some(o => o.toLowerCase() === normalizedOrigin)) {
       return callback(null, true);
     }
     return callback(new Error('Not allowed by CORS'));
